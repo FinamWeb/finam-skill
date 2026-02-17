@@ -1,37 +1,71 @@
 ---
 name: finam
-description: Execute trades, manage portfolios, and access real-time market data via Finam Trade API
-metadata: '{"openclaw": {"emoji": "📈", "homepage": "https://tradeapi.finam.ru/", "requires": {"bins": ["curl", "jq"], "env": ["FINAM_API_KEY", "FINAM_ACCOUNT_ID"]}, "primaryEnv": "FINAM_API_KEY"}}'
+description: Execute trades, manage portfolios, access real-time market data, browse market assets and scan volatility using Finam Trade API
+metadata: '{"openclaw": {"emoji": "📈", "homepage": "https://tradeapi.finam.ru/", "requires": {"bins": ["curl", "jq", "python3"], "env": ["FINAM_API_KEY", "FINAM_ACCOUNT_ID"]}, "primaryEnv": "FINAM_API_KEY"}}'
 ---
 
 # Finam Trade API Skill
 
 ## Setup
 
-Obtain and store JWT token before using the API:
+Obtain and store JWT token before using the API ($FINAM_API_KEY and $FINAM_ACCOUNT_ID is already set):
 
 ```shell
 export FINAM_JWT_TOKEN=$(curl -sL "https://api.finam.ru/v1/sessions" \
 --header "Content-Type: application/json" \
---data "{\"secret\": \"$FINAM_API_KEY\"}" | jq -r '.token')
+--data '{"secret": "'"$FINAM_API_KEY"'"}' | jq -r '.token')
 ```
 
 **Note:** Token expires after 15 minutes. Re-run this command if you receive authentication errors.
 
-## Usage
+## Market assets
 
-### General Rules
+### List Available Exchanges and Equities
 
 **Symbol Format:** All symbols must be in `ticker@mic` format (e.g., `SBER@MISX`)
-
-**Available MIC Codes:**
+**Base MIC Codes:**
 - `MISX` - Moscow Exchange
-- `XNGS` - NASDAQ/NGS
-- `XNYS` - New York Stock Exchange
-- `ARCX` - NYSE ARCA
 - `RUSX` - RTS
+- `XNGS` - NASDAQ/NGS
+- `XNMS` - NASDAQ/NNS
+- `XNYS` - New York Stock Exchange
 
----
+View all supported exchanges with their MIC codes:
+
+```shell
+jq -r '.exchanges[] | "\(.mic) - \(.name)"' assets/exchanges.json
+```
+
+List stocks available on a specific exchange:
+
+```shell
+MIC="MISX"
+LIMIT=20
+jq -r ".$MIC[:$LIMIT] | .[] | \"\(.symbol) - \(.name)\"" assets/equities.json
+```
+
+### Search Assets by Name
+
+Find a stock by name (case-insensitive) across all exchanges:
+
+```shell
+QUERY="apple"
+jq -r --arg q "$QUERY" 'to_entries[] | .value[] | select(.name | ascii_downcase | contains($q)) | "\(.symbol) - \(.name)"' assets/equities.json
+```
+
+### Get Top N Stocks by Volume
+
+Pre-ranked lists of the 100 most liquid equities for each market, ordered by trading volume descending:
+
+```shell
+N=10
+jq -r ".[:$N] | .[] | \"\(.ticker) - \(.name)\"" assets/top_ru_equities.json
+```
+
+```shell
+N=10
+jq -r ".[:$N] | .[] | \"\(.ticker) - \(.name)\"" assets/top_us_equities.json
+```
 
 ## Account Management
 
@@ -51,7 +85,8 @@ curl -sL "https://api.finam.ru/v1/accounts/$FINAM_ACCOUNT_ID" \
 Retrieve current bid/ask prices and last trade:
 
 ```shell
-curl -sL "https://api.finam.ru/v1/instruments/{SYMBOL}/quotes/latest" \
+SYMBOL="SBER@MISX"
+curl -sL "https://api.finam.ru/v1/instruments/$SYMBOL/quotes/latest" \
   --header "Authorization: $FINAM_JWT_TOKEN" | jq
 ```
 
@@ -60,7 +95,8 @@ curl -sL "https://api.finam.ru/v1/instruments/{SYMBOL}/quotes/latest" \
 View current market depth with bid/ask levels:
 
 ```shell
-curl -sL "https://api.finam.ru/v1/instruments/{SYMBOL}/orderbook" \
+SYMBOL="SBER@MISX"
+curl -sL "https://api.finam.ru/v1/instruments/$SYMBOL/orderbook" \
   --header "Authorization: $FINAM_JWT_TOKEN" | jq
 ```
 
@@ -69,7 +105,8 @@ curl -sL "https://api.finam.ru/v1/instruments/{SYMBOL}/orderbook" \
 List the most recent executed trades:
 
 ```shell
-curl -sL "https://api.finam.ru/v1/instruments/{SYMBOL}/trades/latest" \
+SYMBOL="SBER@MISX"
+curl -sL "https://api.finam.ru/v1/instruments/$SYMBOL/trades/latest" \
   --header "Authorization: $FINAM_JWT_TOKEN" | jq
 ```
 
@@ -78,7 +115,11 @@ curl -sL "https://api.finam.ru/v1/instruments/{SYMBOL}/trades/latest" \
 Retrieve historical price data with specified timeframe:
 
 ```shell
-curl -sL "https://api.finam.ru/v1/instruments/{SYMBOL}/bars?timeframe={TIMEFRAME}&interval.startTime={START_TIME}&interval.endTime={END_TIME}" \
+SYMBOL="SBER@MISX"
+TIMEFRAME="TIME_FRAME_D"
+START_TIME="2024-01-01T00:00:00Z"
+END_TIME="2024-04-01T00:00:00Z"
+curl -sL "https://api.finam.ru/v1/instruments/$SYMBOL/bars?timeframe=$TIMEFRAME&interval.startTime=$START_TIME&interval.endTime=$END_TIME" \
   --header "Authorization: $FINAM_JWT_TOKEN" | jq
 ```
 
@@ -108,15 +149,20 @@ curl -sL "https://api.finam.ru/v1/instruments/{SYMBOL}/bars?timeframe={TIMEFRAME
 - `ORDER_TYPE_LIMIT` - Limit order (requires `limitPrice`)
 
 ```shell
+SYMBOL="SBER@MISX"
+QUANTITY="10"
+SIDE="SIDE_BUY"
+ORDER_TYPE="ORDER_TYPE_LIMIT"
+PRICE="310.50"
 curl -sL "https://api.finam.ru/v1/accounts/$FINAM_ACCOUNT_ID/orders" \
   --header "Authorization: $FINAM_JWT_TOKEN" \
   --header "Content-Type: application/json" \
   --data '{
-    "symbol": "{SYMBOL}",
-    "quantity": {"value": "{QUANTITY}"},
-    "side": "{SIDE}",
-    "type": "{ORDER_TYPE}",
-    "limitPrice": {"value": "{PRICE}"}
+    "symbol": "'"$SYMBOL"'",
+    "quantity": {"value": "'"$QUANTITY"'"},
+    "side": "'"$SIDE"'",
+    "type": "'"$ORDER_TYPE"'",
+    "limitPrice": {"value": "'"$PRICE"'"}
   }' | jq
 ```
 
@@ -132,7 +178,8 @@ curl -sL "https://api.finam.ru/v1/accounts/$FINAM_ACCOUNT_ID/orders" \
 Check the status of a specific order:
 
 ```shell
-curl -sL "https://api.finam.ru/v1/accounts/$FINAM_ACCOUNT_ID/orders/{ORDER_ID}" \
+ORDER_ID="12345678"
+curl -sL "https://api.finam.ru/v1/accounts/$FINAM_ACCOUNT_ID/orders/$ORDER_ID" \
   --header "Authorization: $FINAM_JWT_TOKEN" | jq
 ```
 
@@ -141,36 +188,31 @@ curl -sL "https://api.finam.ru/v1/accounts/$FINAM_ACCOUNT_ID/orders/{ORDER_ID}" 
 Cancel a pending order:
 
 ```shell
-curl -sL --request DELETE "https://api.finam.ru/v1/accounts/$FINAM_ACCOUNT_ID/orders/{ORDER_ID}" \
+ORDER_ID="12345678"
+curl -sL --request DELETE "https://api.finam.ru/v1/accounts/$FINAM_ACCOUNT_ID/orders/$ORDER_ID" \
   --header "Authorization: $FINAM_JWT_TOKEN" | jq
 ```
 
-## Reference Data
+## Scripts
 
-### List Available Exchanges
+### Volatility Scanner
 
-View all supported exchanges with their MIC codes:
+Scans the top-100 stocks for a given market and prints the most volatile ones based on annualized historical volatility (close-to-close, last 60 days).
 
+**Usage:**
 ```shell
-jq -r '.exchanges[] | "\(.mic) - \(.name)"' assets/exchanges.json
+python3 scripts/volatility.py [ru|us] [N]
 ```
 
-### Get Equities by Exchange
+**Arguments:**
+- `ru` / `us` — market to scan (default: `ru`)
+- `N` — number of top results to display (default: `10`)
 
-List stocks available on a specific exchange:
-
+**Examples:**
 ```shell
-jq -r '.{MIC}[:{LIMIT}] | .[] | "\(.symbol) - \(.name)"' assets/equities.json
-```
+# Top 10 most volatile Russian stocks
+python3 scripts/volatility.py ru 10
 
-**Example - Get 10 NYSE stocks:**
-```shell
-jq -r '.XNYS[:10] | .[] | "\(.symbol) - \(.name)"' assets/equities.json
+# Top 5 most volatile US stocks
+python3 scripts/volatility.py us 5
 ```
-
-**Example - Get all MISX stocks:**
-```shell
-jq -r '.MISX[] | "\(.symbol) - \(.name)"' assets/equities.json
-```
-
-See [API Reference](assets/openapi.json) for full details.
