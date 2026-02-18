@@ -140,7 +140,38 @@ curl -sL "https://api.finam.ru/v1/instruments/$SYMBOL/bars?timeframe=$TIMEFRAME&
   - `2024-01-15T10:30:00+03:00` (Moscow time, UTC+3)
 
 
+## News
+
+### Get Latest Market News
+
+Fetch and display the latest news headlines. No JWT token required.
+
+Russian market news
+```shell
+curl -sL "https://www.finam.ru/analysis/conews/rsspoint/" | python3 -c "
+import sys, xml.etree.ElementTree as ET
+root = ET.parse(sys.stdin).getroot()
+for item in reversed(root.findall('.//item')):
+    print(f'* {item.findtext('title','')}. {item.findtext('description','').split('...')[0]}')
+"
+```
+
+US market news
+```shell
+curl -sL "https://www.finam.ru/international/advanced/rsspoint/" | python3 -c "
+import sys, xml.etree.ElementTree as ET
+root = ET.parse(sys.stdin).getroot()
+for item in reversed(root.findall('.//item')):
+    print(f'* {item.findtext('title','')}. {item.findtext('description','').split('...')[0]}')
+"
+```
+
+**Parameters:**
+- Change `[:10]` to any number to control how many headlines to display
+
 ## Order Management
+
+> **IMPORTANT:** Before placing or cancelling any order, you MUST explicitly confirm the details with the user and receive their approval. State the full order parameters (symbol, side, quantity, type, price) and wait for confirmation before executing.
 
 ### Place Order
 
@@ -149,21 +180,17 @@ curl -sL "https://api.finam.ru/v1/instruments/$SYMBOL/bars?timeframe=$TIMEFRAME&
 - `ORDER_TYPE_LIMIT` - Limit order (requires `limitPrice`)
 
 ```shell
-SYMBOL="SBER@MISX"
-QUANTITY="10"
-SIDE="SIDE_BUY"
-ORDER_TYPE="ORDER_TYPE_LIMIT"
-PRICE="310.50"
 curl -sL "https://api.finam.ru/v1/accounts/$FINAM_ACCOUNT_ID/orders" \
   --header "Authorization: $FINAM_JWT_TOKEN" \
   --header "Content-Type: application/json" \
-  --data '{
-    "symbol": "'"$SYMBOL"'",
-    "quantity": {"value": "'"$QUANTITY"'"},
-    "side": "'"$SIDE"'",
-    "type": "'"$ORDER_TYPE"'",
-    "limitPrice": {"value": "'"$PRICE"'"}
-  }' | jq
+  --data "$(jq -n \
+    --arg symbol   "SBER@MISX" \
+    --arg quantity "10" \
+    --arg side     "SIDE_BUY" \
+    --arg type     "ORDER_TYPE_LIMIT" \
+    --arg price    "310.50" \
+    '{symbol: $symbol, quantity: {value: $quantity}, side: $side, type: $type, limitPrice: {value: $price}}')" \
+  | jq
 ```
 
 **Parameters:**
