@@ -1,14 +1,25 @@
 ---
 name: finam
-description: Execute trades, manage portfolios, access real-time market data, browse market assets and scan volatility using Finam Trade API
-metadata: '{"openclaw": {"emoji": "📈", "homepage": "https://tradeapi.finam.ru/", "requires": {"bins": ["curl", "jq", "python3"], "env": ["FINAM_API_KEY", "FINAM_ACCOUNT_ID"]}, "primaryEnv": "FINAM_API_KEY"}}'
+description: Execute trades, manage portfolios, access real-time market data, browse market assets, scan volatility, and answer questions about Finam Trade API
+metadata: '{"openclaw": {"emoji": "📈", "homepage": "https://tradeapi.finam.ru/", "requires": {"bins": ["curl", "jq", "python3"], "env": ["FINAM_API_KEY", "FINAM_ACCOUNT_ID"]}}}'
 ---
 
 # Finam Trade API Skill
 
 ## Setup
 
-Obtain and store JWT token before using the API ($FINAM_API_KEY and $FINAM_ACCOUNT_ID is already set):
+**Prerequisites:** `$FINAM_API_KEY` and `$FINAM_ACCOUNT_ID` must be set in your environment.
+
+If not configured by environment, follow these steps:
+1. Register and obtain your API Key from [tokens page](https://tradeapi.finam.ru/docs/tokens)
+2. Obtain your Account ID from your [Finam account dashboard](https://lk.finam.ru/)
+3. Set environment variables:
+```shell
+export FINAM_API_KEY="your_api_key_here"
+export FINAM_ACCOUNT_ID="your_account_id_here"
+```
+
+Obtain JWT token before using the API:
 
 ```shell
 export FINAM_JWT_TOKEN=$(curl -sL "https://api.finam.ru/v1/sessions" \
@@ -243,3 +254,5 @@ python3 scripts/volatility.py ru 10
 # Top 5 most volatile US stocks
 python3 scripts/volatility.py us 5
 ```
+
+See [API Reference](assets/openapi.json) for full Finam Trade API details.

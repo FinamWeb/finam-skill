@@ -35,6 +35,10 @@ def parse_args():
             n = int(arg)
         elif arg == "--debug":
             DEBUG = True
+    # Validate market to prevent path traversal
+    if market not in ("ru", "us"):
+        print(f"Error: Invalid market '{market}'. Must be 'ru' or 'us'.", file=sys.stderr)
+        sys.exit(1)
     return market, n
 
 
