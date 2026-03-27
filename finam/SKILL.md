@@ -1,6 +1,6 @@
 ---
 name: finam
-description: Execute trades, manage portfolios, access real-time market data, browse market assets, scan volatility, and answer questions about Finam Trade API
+description: Execute trades, manage portfolios, access real-time market data, browse and search market assets, scan volatility, and answer questions about Finam Trade API
 metadata: '{"openclaw": {"emoji": "📈", "homepage": "https://tradeapi.finam.ru/", "requires": {"bins": ["curl", "jq", "python3"], "env": ["FINAM_API_KEY", "FINAM_ACCOUNT_ID"]}}}'
 ---
 
@@ -8,7 +8,7 @@ metadata: '{"openclaw": {"emoji": "📈", "homepage": "https://tradeapi.finam.ru
 
 ## Setup
 
-**Prerequisites:** `$FINAM_API_KEY` and `$FINAM_ACCOUNT_ID` must be set in your environment.
+**Prerequisites:** `$FINAM_API_KEY` and `$FINAM_ACCOUNT_ID` must be already set in your environment.
 
 If not configured by environment, follow these steps:
 1. Register and obtain your API Key from [tokens page](https://tradeapi.finam.ru/docs/tokens)
@@ -55,14 +55,29 @@ LIMIT=20
 jq -r ".$MIC[:$LIMIT] | .[] | \"\(.symbol) - \(.name)\"" assets/equities.json
 ```
 
-### Search Assets by Name
+### Search Assets
 
-Find a stock by name (case-insensitive) across all exchanges:
+Search instruments by ticker glob pattern and/or name substring:
 
 ```shell
-QUERY="apple"
-jq -r --arg q "$QUERY" 'to_entries[] | .value[] | select(.name | ascii_downcase | contains($q)) | "\(.symbol) - \(.name)"' assets/equities.json
+# By ticker glob
+python3 scripts/asset_search.py 'SBER*'
+
+# By name (case-insensitive substring)
+python3 scripts/asset_search.py --name 'apple'
+
+# By ticker glob + type filter
+python3 scripts/asset_search.py 'NG*' --type FUTURES
+
+# Search across all instruments (including archived) via /assets/all
+python3 scripts/asset_search.py 'NG*' --type FUTURES --active false
 ```
+
+Available types: `EQUITIES`, `FUTURES`, `BONDS`, `FUNDS`, `SPREADS`, `OTHER`, `CURRENCIES`, `OPTIONS`, `SWAPS`, `INDICES`
+
+`--max=N` switches to `GET /v1/assets/all` with pagination (rate limit: 200 req/min). `--active false` includes archived instruments.
+
+
 
 ### Get Top N Stocks by Volume
 
@@ -231,9 +246,7 @@ curl -sL --request DELETE "https://api.finam.ru/v1/accounts/$FINAM_ACCOUNT_ID/or
   --header "Authorization: $FINAM_JWT_TOKEN" | jq
 ```
 
-## Scripts
-
-### Volatility Scanner
+## Volatility Scanner
 
 Scans the top-100 stocks for a given market and prints the most volatile ones based on annualized historical volatility (close-to-close, last 60 days).
 
@@ -255,4 +268,7 @@ python3 scripts/volatility.py ru 10
 python3 scripts/volatility.py us 5
 ```
 
-See [API Reference](assets/openapi.json) for full Finam Trade API details.
+All scripts support `--help` for usage details (e.g. `python3 scripts/volatility.py --help`).
+
+For full REST API details, use the local file: [REST Reference](references/REST.md)
+For extra gRPC API details, fetch from: [gRPC Reference](https://tradeapi.finam.ru/docs/grpc/)

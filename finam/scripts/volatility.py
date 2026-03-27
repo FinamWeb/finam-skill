@@ -1,65 +1,40 @@
 #!/usr/bin/env python3
 """Volatility scanner for Finam top-100 stocks."""
 
+import argparse
 import json
 import math
-import os
 import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timedelta, timezone
-from pathlib import Path
 
 import urllib.request
 import urllib.error
 
-BASE_URL = "https://api.finam.ru/v1"
-ASSETS_DIR = Path(__file__).parent.parent / "assets"
-
-
-DEBUG = False
-
-
-def dprint(*args, **kwargs):
-    if DEBUG:
-        print(*args, **kwargs)
+import utils
+from utils import BASE_URL, dprint, get_token, load_equities
 
 
 def parse_args():
-    global DEBUG
-    market = "ru"
-    n = 10
-    for arg in sys.argv[1:]:
-        if arg in ("ru", "us"):
-            market = arg
-        elif arg.isdigit():
-            n = int(arg)
-        elif arg == "--debug":
-            DEBUG = True
-    # Validate market to prevent path traversal
-    if market not in ("ru", "us"):
-        print(f"Error: Invalid market '{market}'. Must be 'ru' or 'us'.", file=sys.stderr)
-        sys.exit(1)
-    return market, n
-
-
-def get_token(api_key):
-    url = f"{BASE_URL}/sessions"
-    payload = json.dumps({"secret": api_key}).encode()
-    req = urllib.request.Request(
-        url,
-        data=payload,
-        headers={"Content-Type": "application/json"},
-        method="POST",
+    parser = argparse.ArgumentParser(
+        description="Scan top-100 stocks for annualized historical volatility (last 60 days).",
+        epilog=(
+            "examples:\n"
+            "  volatility.py ru 10\n"
+            "  volatility.py us 5\n"
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    with urllib.request.urlopen(req) as resp:
-        data = json.loads(resp.read())
-    return data["token"]
+    parser.add_argument("market", nargs="?", default="ru", choices=("ru", "us"), help="market to scan (default: ru)")
+    parser.add_argument("n", nargs="?", default=10, type=int, metavar="N", help="number of top results to display (default: 10)")
+    parser.add_argument("--debug", action="store_true", help="verbose output")
 
+    args = parser.parse_args()
 
-def load_equities(market):
-    path = ASSETS_DIR / f"top_{market}_equities.json"
-    with open(path) as f:
-        return json.load(f)
+    if args.debug:
+        utils.DEBUG = True
+
+    return args.market, args.n
 
 
 def fetch_bars(symbol, token):
@@ -99,20 +74,7 @@ def compute_volatility(bars):
 
 def main():
     market, n = parse_args()
-
-    api_key = os.environ.get("FINAM_API_KEY")
-    if not api_key:
-        print("Error: FINAM_API_KEY environment variable is not set.", file=sys.stderr)
-        sys.exit(1)
-    _account_id = os.environ.get("FINAM_ACCOUNT_ID")
-
-    dprint("Obtaining JWT token...")
-    try:
-        token = get_token(api_key)
-    except Exception as e:
-        print(f"Error: failed to authenticate: {e}", file=sys.stderr)
-        sys.exit(1)
-    dprint("Token obtained.")
+    token = get_token()
 
     equities = load_equities(market)
     total = len(equities)
