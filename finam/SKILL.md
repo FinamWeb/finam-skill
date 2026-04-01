@@ -11,9 +11,11 @@ metadata: '{"openclaw": {"emoji": "📈", "homepage": "https://tradeapi.finam.ru
 **Prerequisites:** `$FINAM_API_KEY` and `$FINAM_ACCOUNT_ID` must be already set in your environment.
 
 If not configured by environment, follow these steps:
+
 1. Register and obtain your API Key from [tokens page](https://tradeapi.finam.ru/docs/tokens)
 2. Obtain your Account ID from your [Finam account dashboard](https://lk.finam.ru/)
 3. Set environment variables:
+
 ```shell
 export FINAM_API_KEY="your_api_key_here"
 export FINAM_ACCOUNT_ID="your_account_id_here"
@@ -35,6 +37,7 @@ export FINAM_JWT_TOKEN=$(curl -sL "https://api.finam.ru/v1/sessions" \
 
 **Symbol Format:** All symbols must be in `ticker@mic` format (e.g., `SBER@MISX`)
 **Base MIC Codes:**
+
 - `MISX` - Moscow Exchange
 - `RUSX` - RTS
 - `XNGS` - NASDAQ/NGS
@@ -76,8 +79,6 @@ python3 scripts/asset_search.py 'NG*' --type FUTURES --active false
 Available types: `EQUITIES`, `FUTURES`, `BONDS`, `FUNDS`, `SPREADS`, `OTHER`, `CURRENCIES`, `OPTIONS`, `SWAPS`, `INDICES`
 
 `--max=N` switches to `GET /v1/assets/all` with pagination (rate limit: 200 req/min). `--active false` includes archived instruments.
-
-
 
 ### Get Top N Stocks by Volume
 
@@ -150,6 +151,7 @@ curl -sL "https://api.finam.ru/v1/instruments/$SYMBOL/bars?timeframe=$TIMEFRAME&
 ```
 
 **Available Timeframes:**
+
 - `TIME_FRAME_M1`, `M5`, `M15`, `M30` - Minutes (1, 5, 15, 30)
 - `TIME_FRAME_H1`, `H2`, `H4`, `H8` - Hours (1, 2, 4, 8)
 - `TIME_FRAME_D` - Daily
@@ -158,13 +160,13 @@ curl -sL "https://api.finam.ru/v1/instruments/$SYMBOL/bars?timeframe=$TIMEFRAME&
 - `TIME_FRAME_QR` - Quarterly
 
 **Date Format (RFC 3339):**
+
 - Format: `YYYY-MM-DDTHH:MM:SSZ` or `YYYY-MM-DDTHH:MM:SS+HH:MM`
 - `startTime` - Inclusive (interval start, included in results)
 - `endTime` - Exclusive (interval end, NOT included in results)
 - Examples:
-  - `2024-01-15T10:30:00Z` (UTC)
-  - `2024-01-15T10:30:00+03:00` (Moscow time, UTC+3)
-
+    - `2024-01-15T10:30:00Z` (UTC)
+    - `2024-01-15T10:30:00+03:00` (Moscow time, UTC+3)
 
 ## News
 
@@ -173,6 +175,7 @@ curl -sL "https://api.finam.ru/v1/instruments/$SYMBOL/bars?timeframe=$TIMEFRAME&
 Fetch and display the latest news headlines. No JWT token required.
 
 Russian market news
+
 ```shell
 curl -sL "https://www.finam.ru/analysis/conews/rsspoint/" | python3 -c "
 import sys, xml.etree.ElementTree as ET
@@ -183,6 +186,7 @@ for item in reversed(root.findall('.//item')):
 ```
 
 US market news
+
 ```shell
 curl -sL "https://www.finam.ru/international/advanced/rsspoint/" | python3 -c "
 import sys, xml.etree.ElementTree as ET
@@ -193,15 +197,19 @@ for item in reversed(root.findall('.//item')):
 ```
 
 **Parameters:**
+
 - Change `[:10]` to any number to control how many headlines to display
 
 ## Order Management
 
-> **IMPORTANT:** Before placing or cancelling any order, you MUST explicitly confirm the details with the user and receive their approval. State the full order parameters (symbol, side, quantity, type, price) and wait for confirmation before executing.
+> **IMPORTANT:** Before placing or cancelling any order, you MUST explicitly confirm the details with the user and
+> receive their approval. State the full order parameters (symbol, side, quantity, type, price) and wait for confirmation
+> before executing.
 
 ### Place Order
 
 **Order Types:**
+
 - `ORDER_TYPE_MARKET` - Market order (executes immediately, no `limitPrice` required)
 - `ORDER_TYPE_LIMIT` - Limit order (requires `limitPrice`)
 
@@ -220,6 +228,7 @@ curl -sL "https://api.finam.ru/v1/accounts/$FINAM_ACCOUNT_ID/orders" \
 ```
 
 **Parameters:**
+
 - `symbol` - Instrument (e.g., `SBER@MISX`)
 - `quantity.value` - Number of shares/contracts
 - `side` - `SIDE_BUY` or `SIDE_SELL`
@@ -251,15 +260,18 @@ curl -sL --request DELETE "https://api.finam.ru/v1/accounts/$FINAM_ACCOUNT_ID/or
 Scans the top-100 stocks for a given market and prints the most volatile ones based on annualized historical volatility (close-to-close, last 60 days).
 
 **Usage:**
+
 ```shell
 python3 scripts/volatility.py [ru|us] [N]
 ```
 
 **Arguments:**
+
 - `ru` / `us` — market to scan (default: `ru`)
 - `N` — number of top results to display (default: `10`)
 
 **Examples:**
+
 ```shell
 # Top 10 most volatile Russian stocks
 python3 scripts/volatility.py ru 10
@@ -269,6 +281,30 @@ python3 scripts/volatility.py us 5
 ```
 
 All scripts support `--help` for usage details (e.g. `python3 scripts/volatility.py --help`).
+
+## REST vs gRPC — When to Use Which
+
+**Use REST when:**
+
+- Fetching historical OHLCV data for backtesting or analysis
+- Retrieving account info, positions, balances, and trade history
+- Searching instruments or fetching asset specifications
+- Placing or cancelling a one-off order where 100–200 ms latency is acceptable
+- Checking order status after placement
+
+**Use gRPC when:**
+
+- Subscribing to real-time market data: quotes, order book, trade feed
+- Processing live bar data (M1, M5) for signal generation in event-driven strategies
+- Monitoring own orders and trades in real time via subscription
+- Your strategy requires minimal latency for rapid order placement/cancellation
+- Building long-running trading bots that need persistent, auto-reconnecting connections
+
+For gRPC, use the [FinamPy](https://github.com/cia76/FinamPy) Python library (
+`pip install git+https://github.com/cia76/FinamPy.git`).
+Full usage reference: [gRPC Python Reference](references/GRPC.md)
+
+---
 
 For full REST API details, use the local file: [REST Reference](references/REST.md)
 For extra gRPC API details, fetch from: [gRPC Reference](https://tradeapi.finam.ru/docs/grpc/)
