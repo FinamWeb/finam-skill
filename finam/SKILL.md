@@ -58,6 +58,18 @@ LIMIT=20
 jq -r ".$MIC[:$LIMIT] | .[] | \"\(.symbol) - \(.name)\"" assets/equities.json
 ```
 
+### Get Asset Specification
+
+Fetch detailed specification for a specific instrument (lot size, price step, decimals, trading schedule, etc.):
+
+```shell
+SYMBOL="SBER@MISX"
+curl -sL "https://api.finam.ru/v1/assets/$SYMBOL?accountId=$FINAM_ACCOUNT_ID" \
+  --header "Authorization: $FINAM_JWT_TOKEN" | jq
+```
+
+`accountId` is optional but recommended — returns account-specific fields (margin, available quantity, etc.).
+
 ### Search Assets
 
 Search instruments by ticker glob pattern and/or name substring:
