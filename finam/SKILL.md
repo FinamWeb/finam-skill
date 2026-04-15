@@ -64,11 +64,11 @@ Fetch detailed specification for a specific instrument (lot size, price step, de
 
 ```shell
 SYMBOL="SBER@MISX"
-curl -sL "https://api.finam.ru/v1/assets/$SYMBOL?accountId=$FINAM_ACCOUNT_ID" \
+curl -sL "https://api.finam.ru/v1/assets/$SYMBOL?account_id=$FINAM_ACCOUNT_ID" \
   --header "Authorization: $FINAM_JWT_TOKEN" | jq
 ```
 
-`accountId` is optional but recommended — returns account-specific fields (margin, available quantity, etc.).
+`account_id` is optional but recommended — returns account-specific fields (margin, available quantity, etc.).
 
 ### Search Assets
 
@@ -158,24 +158,35 @@ SYMBOL="SBER@MISX"
 TIMEFRAME="TIME_FRAME_D"
 START_TIME="2024-01-01T00:00:00Z"
 END_TIME="2024-04-01T00:00:00Z"
-curl -sL "https://api.finam.ru/v1/instruments/$SYMBOL/bars?timeframe=$TIMEFRAME&interval.startTime=$START_TIME&interval.endTime=$END_TIME" \
+curl -sL "https://api.finam.ru/v1/instruments/$SYMBOL/bars?timeframe=$TIMEFRAME&interval.start_time=$START_TIME&interval.end_time=$END_TIME" \
   --header "Authorization: $FINAM_JWT_TOKEN" | jq
 ```
 
 **Available Timeframes:**
 
-- `TIME_FRAME_M1`, `M5`, `M15`, `M30` - Minutes (1, 5, 15, 30)
-- `TIME_FRAME_H1`, `H2`, `H4`, `H8` - Hours (1, 2, 4, 8)
-- `TIME_FRAME_D` - Daily
-- `TIME_FRAME_W` - Weekly
-- `TIME_FRAME_MN` - Monthly
-- `TIME_FRAME_QR` - Quarterly
+| Timeframe | Description | Max data depth (end_time - start_time) |
+|---|---|---|
+| `TIME_FRAME_UNSPECIFIED` | Not specified | — |
+| `TIME_FRAME_M1` | 1 minute | 7 days |
+| `TIME_FRAME_M5` | 5 minutes | 30 days |
+| `TIME_FRAME_M15` | 15 minutes | 30 days |
+| `TIME_FRAME_M30` | 30 minutes | 30 days |
+| `TIME_FRAME_H1` | 1 hour | 30 days |
+| `TIME_FRAME_H2` | 2 hours | 30 days |
+| `TIME_FRAME_H4` | 4 hours | 30 days |
+| `TIME_FRAME_H8` | 8 hours | 30 days |
+| `TIME_FRAME_D` | Day | 365 days |
+| `TIME_FRAME_W` | Week | ~5 years |
+| `TIME_FRAME_MN` | Month | ~5 years |
+| `TIME_FRAME_QR` | Quarter | ~5 years |
+
+> **Note:** The max data depth is the maximum allowed range for `end_time - start_time`. If the range exceeds the limit, the API returns empty data.
 
 **Date Format (RFC 3339):**
 
 - Format: `YYYY-MM-DDTHH:MM:SSZ` or `YYYY-MM-DDTHH:MM:SS+HH:MM`
-- `startTime` - Inclusive (interval start, included in results)
-- `endTime` - Exclusive (interval end, NOT included in results)
+- `start_time` - Inclusive (interval start, included in results)
+- `end_time` - Exclusive (interval end, NOT included in results)
 - Examples:
     - `2024-01-15T10:30:00Z` (UTC)
     - `2024-01-15T10:30:00+03:00` (Moscow time, UTC+3)
@@ -222,8 +233,8 @@ for item in reversed(root.findall('.//item')):
 
 **Order Types:**
 
-- `ORDER_TYPE_MARKET` - Market order (executes immediately, no `limitPrice` required)
-- `ORDER_TYPE_LIMIT` - Limit order (requires `limitPrice`)
+- `ORDER_TYPE_MARKET` - Market order (executes immediately, no `limit_price` required)
+- `ORDER_TYPE_LIMIT` - Limit order (requires `limit_price`)
 
 ```shell
 curl -sL "https://api.finam.ru/v1/accounts/$FINAM_ACCOUNT_ID/orders" \
@@ -235,7 +246,7 @@ curl -sL "https://api.finam.ru/v1/accounts/$FINAM_ACCOUNT_ID/orders" \
     --arg side     "SIDE_BUY" \
     --arg type     "ORDER_TYPE_LIMIT" \
     --arg price    "310.50" \
-    '{symbol: $symbol, quantity: {value: $quantity}, side: $side, type: $type, limitPrice: {value: $price}}')" \
+    '{symbol: $symbol, quantity: {value: $quantity}, side: $side, type: $type, limit_price: {value: $price}}')" \
   | jq
 ```
 
@@ -245,7 +256,7 @@ curl -sL "https://api.finam.ru/v1/accounts/$FINAM_ACCOUNT_ID/orders" \
 - `quantity.value` - Number of shares/contracts
 - `side` - `SIDE_BUY` or `SIDE_SELL`
 - `type` - `ORDER_TYPE_MARKET` or `ORDER_TYPE_LIMIT`
-- `limitPrice` - Only for `ORDER_TYPE_LIMIT` (omit for market orders)
+- `limit_price` - Only for `ORDER_TYPE_LIMIT` (omit for market orders)
 
 ### Get Order Status
 

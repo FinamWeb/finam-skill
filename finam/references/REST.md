@@ -134,8 +134,8 @@ curl 'https://api.finam.ru/v1/accounts/{accountId}' \
 | Name | Type | Required | Description |
 | --- | --- | --- | --- |
 | limit | integer (int32) | no | Лимит количества сделок |
-| interval.startTime | string (date-time) | no | Inclusive start of the interval. If specified, a Timestamp matching this interval will have to be the same or after the start. |
-| interval.endTime | string (date-time) | no | Exclusive end of the interval. If specified, a Timestamp matching this interval will have to be before the end. |
+| interval.start_time | string (date-time) | no | Inclusive start of the interval. If specified, a Timestamp matching this interval will have to be the same or after the start. |
+| interval.end_time | string (date-time) | no | Exclusive end of the interval. If specified, a Timestamp matching this interval will have to be before the end. |
 
 **Responses**
 
@@ -154,7 +154,7 @@ curl 'https://api.finam.ru/v1/accounts/{accountId}' \
 **Request Example**
 
 ```curl
-curl 'https://api.finam.ru/v1/accounts/{accountId}/trades?limit=1&interval.startTime=&interval.endTime=' \
+curl 'https://api.finam.ru/v1/accounts/{accountId}/trades?limit=1&interval.start_time=&interval.end_time=' \
   --header 'Authorization: YOUR_SECRET_TOKEN'
 ```
 
@@ -203,8 +203,8 @@ curl 'https://api.finam.ru/v1/accounts/{accountId}/trades?limit=1&interval.start
 | Name | Type | Required | Description |
 | --- | --- | --- | --- |
 | limit | integer (int32) | no | Лимит количества транзакций |
-| interval.startTime | string (date-time) | no | Inclusive start of the interval. If specified, a Timestamp matching this interval will have to be the same or after the start. |
-| interval.endTime | string (date-time) | no | Exclusive end of the interval. If specified, a Timestamp matching this interval will have to be before the end. |
+| interval.start_time | string (date-time) | no | Inclusive start of the interval. If specified, a Timestamp matching this interval will have to be the same or after the start. |
+| interval.end_time | string (date-time) | no | Exclusive end of the interval. If specified, a Timestamp matching this interval will have to be before the end. |
 
 **Responses**
 
@@ -223,7 +223,7 @@ curl 'https://api.finam.ru/v1/accounts/{accountId}/trades?limit=1&interval.start
 **Request Example**
 
 ```curl
-curl 'https://api.finam.ru/v1/accounts/{accountId}/transactions?limit=1&interval.startTime=&interval.endTime=' \
+curl 'https://api.finam.ru/v1/accounts/{accountId}/transactions?limit=1&interval.start_time=&interval.end_time=' \
   --header 'Authorization: YOUR_SECRET_TOKEN'
 ```
 
@@ -332,8 +332,8 @@ curl https://api.finam.ru/v1/assets \
 | Name | Type | Required | Description |
 | --- | --- | --- | --- |
 | cursor | string (int64) | no | Курсор для пагинации. Указывает sec_id инструмента, с которого должен начинаться список. Для первого запроса оставьте поле пустым (значение 0). Для последующих запросов используйте значение next_cursor из предыдущего ответа. |
-| onlyActive | boolean | no | Фильтрация по статусу инструмента: выбираются только активные (неархивные) инструменты. По умолчанию: false. |
-| onlyDisabled | boolean | no | Фильтрация по статусу инструмента: выбираются только неактивные (архивные) инструменты. По умолчанию: false. |
+| only_active | boolean | no | Фильтрация по статусу инструмента: выбираются только активные (неархивные) инструменты. По умолчанию: false. |
+| only_disabled | boolean | no | Фильтрация по статусу инструмента: выбираются только неактивные (архивные) инструменты. По умолчанию: false. |
 
 **Responses**
 
@@ -351,7 +351,7 @@ curl https://api.finam.ru/v1/assets \
 **Request Example**
 
 ```curl
-curl 'https://api.finam.ru/v1/assets/all?cursor=&onlyActive=true&onlyDisabled=true' \
+curl 'https://api.finam.ru/v1/assets/all?cursor=&only_active=true&only_disabled=true' \
   --header 'Authorization: YOUR_SECRET_TOKEN'
 ```
 
@@ -417,7 +417,7 @@ curl https://api.finam.ru/v1/assets/clock \
 
 Параметры:
 - `symbol` — передается в URL пути
-- `accountId` — передаётся как query-параметр
+- `account_id` — передаётся как query-параметр
 
 **Path Parameters**
 
@@ -429,7 +429,7 @@ curl https://api.finam.ru/v1/assets/clock \
 
 | Name | Type | Required | Description |
 | --- | --- | --- | --- |
-| accountId | string | no | ID аккаунта для которого будет подбираться информация по инструменту |
+| account_id | string | no | ID аккаунта для которого будет подбираться информация по инструменту |
 
 **Responses**
 
@@ -448,7 +448,7 @@ curl https://api.finam.ru/v1/assets/clock \
 **Request Example**
 
 ```curl
-curl 'https://api.finam.ru/v1/assets/{symbol}?accountId=' \
+curl 'https://api.finam.ru/v1/assets/{symbol}?account_id=' \
   --header 'Authorization: YOUR_SECRET_TOKEN'
 ```
 
@@ -485,7 +485,7 @@ curl 'https://api.finam.ru/v1/assets/{symbol}?accountId=' \
 
 Параметры:
 - `symbol` — передается в URL пути
-- `accountId` — передаётся как query-параметр
+- `account_id` — передаётся как query-параметр
 
 **Path Parameters**
 
@@ -497,7 +497,7 @@ curl 'https://api.finam.ru/v1/assets/{symbol}?accountId=' \
 
 | Name | Type | Required | Description |
 | --- | --- | --- | --- |
-| accountId | string | no | ID аккаунта для которого будут подбираться торговые параметры |
+| account_id | string | no | ID аккаунта для которого будут подбираться торговые параметры |
 
 **Responses**
 
@@ -516,7 +516,7 @@ curl 'https://api.finam.ru/v1/assets/{symbol}?accountId=' \
 **Request Example**
 
 ```curl
-curl 'https://api.finam.ru/v1/assets/{symbol}/params?accountId=' \
+curl 'https://api.finam.ru/v1/assets/{symbol}/params?account_id=' \
   --header 'Authorization: YOUR_SECRET_TOKEN'
 ```
 
@@ -886,8 +886,8 @@ curl https://api.finam.ru/v1/sessions/details \
 | Name | Type | Required | Description |
 | --- | --- | --- | --- |
 | timeframe | string (enum) | no | Необходимый таймфрейм. Значения: `TIME_FRAME_UNSPECIFIED` (не указан), `TIME_FRAME_M1` (1 мин, глубина 7 дней), `TIME_FRAME_M5` (5 мин, 30 дней), `TIME_FRAME_M15` (15 мин, 30 дней), `TIME_FRAME_M30` (30 мин, 30 дней), `TIME_FRAME_H1` (1 час, 30 дней), `TIME_FRAME_H2` (2 часа, 30 дней), `TIME_FRAME_H4` (4 часа, 30 дней), `TIME_FRAME_H8` (8 часов, 30 дней), `TIME_FRAME_D` (день, 365 дней), `TIME_FRAME_W` (неделя, 365*5 дней), `TIME_FRAME_MN` (месяц, 365*5 дней), `TIME_FRAME_QR` (квартал, 365*5 дней) |
-| interval.startTime | string (date-time) | no | Inclusive start of the interval. If specified, a Timestamp matching this interval will have to be the same or after the start. |
-| interval.endTime | string (date-time) | no | Exclusive end of the interval. If specified, a Timestamp matching this interval will have to be before the end. |
+| interval.start_time | string (date-time) | no | Inclusive start of the interval. If specified, a Timestamp matching this interval will have to be the same or after the start. |
+| interval.end_time | string (date-time) | no | Exclusive end of the interval. If specified, a Timestamp matching this interval will have to be before the end. |
 
 **Responses**
 
@@ -906,7 +906,7 @@ curl https://api.finam.ru/v1/sessions/details \
 **Request Example**
 
 ```curl
-curl 'https://api.finam.ru/v1/instruments/{symbol}/bars?timeframe=TIME_FRAME_UNSPECIFIED&interval.startTime=&interval.endTime=' \
+curl 'https://api.finam.ru/v1/instruments/{symbol}/bars?timeframe=TIME_FRAME_UNSPECIFIED&interval.start_time=&interval.end_time=' \
   --header 'Authorization: YOUR_SECRET_TOKEN'
 ```
 
