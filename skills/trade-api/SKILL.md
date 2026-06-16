@@ -1,7 +1,7 @@
 ---
 name: finam-trade-api
-description: Execute trades, manage portfolios, access real-time market data, browse and search market assets, scan volatility, and answer questions about Finam Trade API
-metadata: '{"openclaw": {"emoji": "📈", "homepage": "https://tradeapi.finam.ru/", "requires": {"bins": ["curl", "jq", "python3"], "env": ["FINAM_API_KEY", "FINAM_ACCOUNT_ID"]}}}'
+description: Use this skill whenever the user asks about Finam Trade API, quotes or market data, placing or cancelling orders through Finam broker, portfolio analysis, historical OHLCV candles, volatility scanning, or building algorithmic trading scripts. Trigger even if the user doesn't mention Finam explicitly but describes a trading workflow compatible with a broker — fetching prices, working with order books, streaming real-time data via gRPC, or automating trades with finam-sdk.
+metadata: '{"openclaw": {"emoji": "📈", "homepage": "https://api.finam.ru/", "requires": {"bins": ["curl", "jq", "python3"], "env": ["FINAM_API_KEY", "FINAM_ACCOUNT_ID"]}}}'
 ---
 
 # Finam Trade API Skill
@@ -31,31 +31,33 @@ export FINAM_JWT_TOKEN=$(curl -sL "https://api.finam.ru/v1/sessions" \
 
 **Note:** Token expires after 15 minutes. Re-run this command if you receive authentication errors.
 
+`$FINAM_ACCOUNT_ID` — numeric part only, without the `KlF-` prefix.
+
+**Demo account:** Can be opened at the [tokens page](https://tradeapi.finam.ru/docs/tokens). Valid for 2 weeks; works identically to a real account.
+
+**Rate limits:** 200 requests/min per method.
+
+**Maintenance window:** 05:00–06:15 MSK daily — API may be unavailable.
+
 ## Market assets
 
-### List Available Exchanges and Equities
+### List Available Exchanges
 
 **Symbol Format:** All symbols must be in `ticker@mic` format (e.g., `SBER@MISX`)
-**Base MIC Codes:**
 
-- `MISX` - Moscow Exchange
-- `RUSX` - RTS
-- `XNGS` - NASDAQ/NGS
-- `XNMS` - NASDAQ/NNS
+**Base MIC Codes:**
+- `MISX` - Moscow Exchange (all markets)
+- `RTSX` - Moscow Exchange, Derivatives Market (futures & options)
 - `XNYS` - New York Stock Exchange
+- `ARCX` - NYSE Arca (ETFs)
+- `XNGS` - NASDAQ/NGS (Global Select Market)
+- `XNMS` - NASDAQ/NNS (Global Market)
+- `XNCM` - NASDAQ Capital Market
 
 View all supported exchanges with their MIC codes:
 
 ```shell
 jq -r '.exchanges[] | "\(.mic) - \(.name)"' assets/exchanges.json
-```
-
-List stocks available on a specific exchange:
-
-```shell
-MIC="MISX"
-LIMIT=20
-jq -r ".$MIC[:$LIMIT] | .[] | \"\(.symbol) - \(.name)\"" assets/equities.json
 ```
 
 ### Get Asset Specification
@@ -204,7 +206,8 @@ curl -sL "https://www.finam.ru/analysis/conews/rsspoint/" | python3 -c "
 import sys, xml.etree.ElementTree as ET
 root = ET.parse(sys.stdin).getroot()
 for item in reversed(root.findall('.//item')):
-    print(f'* {item.findtext('title','')}. {item.findtext('description','').split('...')[0]}')
+    t=item.findtext('title',''); d=item.findtext('description','').split('...')[0]
+    print(f'* {t}. {d}')
 "
 ```
 
@@ -215,13 +218,10 @@ curl -sL "https://www.finam.ru/international/advanced/rsspoint/" | python3 -c "
 import sys, xml.etree.ElementTree as ET
 root = ET.parse(sys.stdin).getroot()
 for item in reversed(root.findall('.//item')):
-    print(f'* {item.findtext('title','')}. {item.findtext('description','').split('...')[0]}')
+    t=item.findtext('title',''); d=item.findtext('description','').split('...')[0]
+    print(f'* {t}. {d}')
 "
 ```
-
-**Parameters:**
-
-- Change `[:10]` to any number to control how many headlines to display
 
 ## Order Management
 
@@ -309,14 +309,26 @@ All scripts support `--help` for usage details (e.g. `python3 scripts/volatility
 
 ### REST — [references/docs/rest.md](references/docs/rest.md)
 
+Endpoint: `https://api.finam.ru/v1` (HTTP/2 required — HTTP/1 causes method errors)
+
 Use for one-off requests: historical OHLCV data, account info, positions, balances, trade history, instrument search, placing or cancelling orders where 100–200 ms latency is acceptable.
 
 ### gRPC — [references/docs/grpc.md](references/docs/grpc.md)
 
+Endpoint: `api.finam.ru:443`
+
 Use for low-latency and streaming scenarios: real-time quotes, order book, trade feed, live bar data for signal generation, monitoring own orders/trades via subscription, long-running trading bots with persistent auto-reconnecting connections.
 
-For Python use the [FinamPy](https://github.com/cia76/FinamPy) wrapper (`pip install git+https://github.com/cia76/FinamPy.git`) — full reference in [references/FinamPy.md](references/FinamPy.md).
+**Note:** Streams disconnect once per day (~86400s from subscription start) — implement reconnection logic in long-running bots.
 
 ### WebSocket / AsyncAPI — [references/docs/async-api.md](references/docs/async-api.md)
 
+Endpoints: `api.finam.ru/ws` or `api.finam.ru/tradinginfo`
+
 Use when you need a browser-compatible or firewall-friendly alternative to gRPC for real-time data: streaming quotes, order book updates, and trade events over a standard WebSocket connection.
+
+## Python SDK
+
+Use the Finam SDK (`pip install finam-sdk`) for any Python scripts that interact with the API — both for one-off queries and streaming/trading bots. It handles JWT issuance and refresh automatically, provides typed exceptions, and exposes the full gRPC surface via a single `FinamClient` / `AsyncFinamClient` entry point.
+
+Full reference: [references/finam-sdk.md](references/finam-sdk.md)

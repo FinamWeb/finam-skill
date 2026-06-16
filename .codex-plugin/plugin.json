@@ -1,0 +1,44 @@
+{
+  "name": "finam",
+  "version": "1.0.0",
+  "description": "Finam Trade API plugin for Codex. Skills: finam:trade-api for real-time quotes, order book, OHLCV candles, portfolio and orders via REST, gRPC, and WebSocket; instrument search and volatility scanning; placing and cancelling orders through Finam broker; developing algorithmic trading scripts.",
+  "author": {
+    "name": "Alexander",
+    "url": "https://github.com/Alexander-Panov"
+  },
+  "homepage": "https://github.com/FinamWeb/finam-skill",
+  "repository": "https://github.com/FinamWeb/finam-skill",
+  "license": "MIT",
+  "keywords": [
+    "finam",
+    "trade-api",
+    "rest",
+    "grpc",
+    "websocket",
+    "market-data",
+    "ohlcv",
+    "orderbook",
+    "orders",
+    "portfolio",
+    "algo-trading",
+    "finance"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Finam Trade API",
+    "shortDescription": "Market data, orders, and algo trading through Finam broker.",
+    "longDescription": "Codex skills for working with Finam Trade API: accessing real-time quotes, order book, OHLCV candles, and trade history; searching and scanning instruments; managing portfolio and orders; placing and cancelling orders through Finam broker; developing and running algorithmic trading scripts via REST, gRPC, and WebSocket.",
+    "developerName": "Alexander",
+    "category": "Finance",
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
+    "websiteURL": "https://github.com/FinamWeb/finam-skill",
+    "defaultPrompt": [
+      "Show me the latest quotes for SBER@MISX.",
+      "Scan the most volatile Russian stocks today.",
+      "Write an algo trading script using Finam gRPC."
+    ]
+  }
+}
