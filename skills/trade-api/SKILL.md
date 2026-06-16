@@ -1,5 +1,5 @@
 ---
-name: finam
+name: finam-trade-api
 description: Execute trades, manage portfolios, access real-time market data, browse and search market assets, scan volatility, and answer questions about Finam Trade API
 metadata: '{"openclaw": {"emoji": "📈", "homepage": "https://tradeapi.finam.ru/", "requires": {"bins": ["curl", "jq", "python3"], "env": ["FINAM_API_KEY", "FINAM_ACCOUNT_ID"]}}}'
 ---
@@ -195,7 +195,7 @@ curl -sL "https://api.finam.ru/v1/instruments/$SYMBOL/bars?timeframe=$TIMEFRAME&
 
 ### Get Latest Market News
 
-Fetch and display the latest news headlines. No JWT token required.
+Fetch and display the latest news headlines via Finam. No JWT token required.
 
 Russian market news
 
@@ -305,29 +305,18 @@ python3 scripts/volatility.py us 5
 
 All scripts support `--help` for usage details (e.g. `python3 scripts/volatility.py --help`).
 
-## REST vs gRPC — When to Use Which
+## API Protocols
 
-**Use REST when:**
+### REST — [references/docs/rest.md](references/docs/rest.md)
 
-- Fetching historical OHLCV data for backtesting or analysis
-- Retrieving account info, positions, balances, and trade history
-- Searching instruments or fetching asset specifications
-- Placing or cancelling a one-off order where 100–200 ms latency is acceptable
-- Checking order status after placement
+Use for one-off requests: historical OHLCV data, account info, positions, balances, trade history, instrument search, placing or cancelling orders where 100–200 ms latency is acceptable.
 
-**Use gRPC when:**
+### gRPC — [references/docs/grpc.md](references/docs/grpc.md)
 
-- Subscribing to real-time market data: quotes, order book, trade feed
-- Processing live bar data (M1, M5) for signal generation in event-driven strategies
-- Monitoring own orders and trades in real time via subscription
-- Your strategy requires minimal latency for rapid order placement/cancellation
-- Building long-running trading bots that need persistent, auto-reconnecting connections
+Use for low-latency and streaming scenarios: real-time quotes, order book, trade feed, live bar data for signal generation, monitoring own orders/trades via subscription, long-running trading bots with persistent auto-reconnecting connections.
 
-For gRPC, use the [FinamPy](https://github.com/cia76/FinamPy) Python library (
-`pip install git+https://github.com/cia76/FinamPy.git`).
-Full usage reference: [gRPC Python Reference](references/GRPC.md)
+For Python use the [FinamPy](https://github.com/cia76/FinamPy) wrapper (`pip install git+https://github.com/cia76/FinamPy.git`) — full reference in [references/FinamPy.md](references/FinamPy.md).
 
----
+### WebSocket / AsyncAPI — [references/docs/async-api.md](references/docs/async-api.md)
 
-For full REST API details, use the local file: [REST Reference](references/REST.md)
-For extra gRPC API details, fetch from: [gRPC Reference](https://tradeapi.finam.ru/docs/grpc/)
+Use when you need a browser-compatible or firewall-friendly alternative to gRPC for real-time data: streaming quotes, order book updates, and trade events over a standard WebSocket connection.

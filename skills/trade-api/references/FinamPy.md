@@ -1,4 +1,4 @@
-# Finam Trade API — gRPC (FinamPy)
+# FinamPy
 
 Библиотека-обёртка [FinamPy](https://github.com/cia76/FinamPy) для работы с [Finam Trade API](https://tradeapi.finam.ru) v2.13.0 из Python по протоколу gRPC.
 
