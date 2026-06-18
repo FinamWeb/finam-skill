@@ -1,6 +1,6 @@
 ---
-name: finam-trade-api
-description: Use this skill whenever the user asks about Finam Trade API, quotes or market data, placing or cancelling orders through Finam broker, portfolio analysis, historical OHLCV candles, volatility scanning, or building algorithmic trading scripts. Trigger even if the user doesn't mention Finam explicitly but describes a trading workflow compatible with a broker — fetching prices, working with order books, streaming real-time data via gRPC, or automating trades with finam-sdk.
+name: trade-api
+description: "Use this skill for any work with Finam / Финам broker and Trade API: questions about the API, developing algorithmic trading strategies and scripts, and interacting with the broker programmatically. Trigger on: Finam/Финам mentions, api.finam.ru URLs, ticker@mic symbol format, finam-sdk. Also trigger for Russian-market trading workflows even without explicit Finam mention — portfolio analysis, scanning Moscow Exchange stocks (MISX/RTSX), volatility/momentum/arbitrage strategies, order placement and cancellation, real-time quotes via gRPC or WebSocket, OHLCV candles, backtesting on Russian equities, risk management for algo trading."
 metadata: '{"openclaw": {"emoji": "📈", "homepage": "https://api.finam.ru/", "requires": {"bins": ["curl", "jq", "python3"], "env": ["FINAM_API_KEY", "FINAM_ACCOUNT_ID"]}}}'
 ---
 
@@ -278,32 +278,119 @@ curl -sL --request DELETE "https://api.finam.ru/v1/accounts/$FINAM_ACCOUNT_ID/or
   --header "Authorization: $FINAM_JWT_TOKEN" | jq
 ```
 
-## Volatility Scanner
+## Building Strategies
 
-Scans the top-100 stocks for a given market and prints the most volatile ones based on annualized historical volatility (close-to-close, last 60 days).
+### Pattern: scan → signal → execute
+
+Every algo strategy follows the same loop:
+1. **Scan** — fetch market data for a universe of instruments (candles, quotes, scanner)
+2. **Signal** — compute metrics (growth, volatility, momentum) and decide action per symbol
+3. **Execute** — place or cancel orders based on signals; confirm with user before executing
+
+For one-off runs use `FinamClient` (sync). For continuous bots, use `AsyncFinamClient` with a reconnection loop (see Python SDK section).
+
+### Momentum strategy
+
+Buy if the stock grew over the last N days, sell otherwise:
+
+```python
+import os
+from datetime import datetime, timedelta, timezone
+from google.type.decimal_pb2 import Decimal
+from finam_trade_api import FinamClient
+from finam_trade_api.market_data import BarsRequest, TimeFrame
+from finam_trade_api.orders import Order, OrderType, Side, TimeInForce
+
+SYMBOLS = ["SBER@MISX", "GAZP@MISX", "LKOH@MISX"]
+LOOKBACK_DAYS = 30
+QUANTITY = "1"
+
+def get_growth(client, symbol, days):
+    end = datetime.now(timezone.utc)
+    start = end - timedelta(days=days)
+    req = BarsRequest(symbol=symbol, timeframe=TimeFrame.TIME_FRAME_D)
+    req.interval.start_time.FromDatetime(start)
+    req.interval.end_time.FromDatetime(end)
+    bars = list(client.market_data.Bars(req).bars)
+    if len(bars) < 2:
+        return None
+    first, last = float(bars[0].close.value), float(bars[-1].close.value)
+    return (last - first) / first * 100
+
+account_id = os.environ["FINAM_ACCOUNT_ID"]
+
+with FinamClient(secret=os.environ["FINAM_API_KEY"]) as client:
+    for symbol in SYMBOLS:
+        growth = get_growth(client, symbol, LOOKBACK_DAYS)
+        if growth is None:
+            print(f"{symbol}: not enough data, skipping")
+            continue
+
+        side = Side.SIDE_BUY if growth > 0 else Side.SIDE_SELL
+        print(f"{symbol}: growth={growth:+.1f}% → {'BUY' if side == Side.SIDE_BUY else 'SELL'}")
+
+        # IMPORTANT: confirm with user before uncommenting
+        # state = client.orders.PlaceOrder(Order(
+        #     account_id=account_id,
+        #     symbol=symbol,
+        #     quantity=Decimal(value=QUANTITY),
+        #     side=side,
+        #     type=OrderType.ORDER_TYPE_MARKET,
+        #     time_in_force=TimeInForce.TIME_IN_FORCE_DAY,
+        # ))
+        # print(f"  Order placed: {state.order_id}")
+```
+
+### Backtesting
+
+To backtest a strategy on historical data, shift the `start`/`end` window in `BarsRequest` to a past period and replay your signal logic bar by bar. No external framework needed:
+
+```python
+# Simulate momentum over 2024
+backtest_end = datetime(2025, 1, 1, tzinfo=timezone.utc)
+backtest_start = datetime(2024, 1, 1, tzinfo=timezone.utc)
+
+req = BarsRequest(symbol="SBER@MISX", timeframe=TimeFrame.TIME_FRAME_D)
+req.interval.start_time.FromDatetime(backtest_start)
+req.interval.end_time.FromDatetime(backtest_end)
+bars = list(client.market_data.Bars(req).bars)
+
+# Walk forward: at each bar, compute signal on the preceding window
+window = 30
+for i in range(window, len(bars)):
+    segment = bars[i - window:i]
+    first = float(segment[0].close.value)
+    last = float(segment[-1].close.value)
+    signal = "BUY" if last > first else "SELL"
+    print(f"{bars[i].time.ToDatetime():%Y-%m-%d}  {signal}  close={last}")
+```
+
+> Max historical depth per request depends on timeframe (e.g. `TIME_FRAME_D` → 365 days). For longer periods, paginate by shifting the window.
+
+## Market Scanner
+
+Scans top-100 stocks for volatility, growth, and volume. Supports filtering and sorting by any metric.
 
 **Usage:**
 
 ```shell
-python3 scripts/volatility.py [ru|us] [N]
+python3 scripts/scanner.py [ru|us] [N] [--sort volatility|growth|volume] [--days N] [--min-growth PCT] [--min-volume VAL]
 ```
-
-**Arguments:**
-
-- `ru` / `us` — market to scan (default: `ru`)
-- `N` — number of top results to display (default: `10`)
 
 **Examples:**
 
 ```shell
-# Top 10 most volatile Russian stocks
-python3 scripts/volatility.py ru 10
+# Top 10 most volatile Russian stocks (last 60 days)
+python3 scripts/scanner.py ru 10
+
+# Stocks up >5% this week with avg daily volume >500M rubles
+python3 scripts/scanner.py ru --days 5 --sort growth --min-growth 5 --min-volume 500000000
 
 # Top 5 most volatile US stocks
-python3 scripts/volatility.py us 5
+python3 scripts/scanner.py us 5
 ```
 
-All scripts support `--help` for usage details (e.g. `python3 scripts/volatility.py --help`).
+All scripts support `--help` for usage details (e.g. `python3 scripts/scanner.py --help`).
 
 ## API Protocols
 
@@ -332,3 +419,86 @@ Use when you need a browser-compatible or firewall-friendly alternative to gRPC 
 Use the Finam SDK (`pip install finam-sdk`) for any Python scripts that interact with the API — both for one-off queries and streaming/trading bots. It handles JWT issuance and refresh automatically, provides typed exceptions, and exposes the full gRPC surface via a single `FinamClient` / `AsyncFinamClient` entry point.
 
 Full reference: [references/finam-sdk.md](references/finam-sdk.md)
+
+### Authenticate and fetch account info
+
+```python
+import os
+from finam_trade_api import FinamClient
+from finam_trade_api.accounts import GetAccountRequest
+
+with FinamClient(secret=os.environ["FINAM_API_KEY"]) as client:
+    account = client.accounts.GetAccount(
+        GetAccountRequest(account_id=os.environ["FINAM_ACCOUNT_ID"])
+    )
+    print(account)
+```
+
+### Place a limit order and cancel it
+
+```python
+import os
+from google.type.decimal_pb2 import Decimal
+from finam_trade_api import FinamClient
+from finam_trade_api.orders import (
+    CancelOrderRequest, Order, OrderType, Side, TimeInForce,
+)
+
+with FinamClient(secret=os.environ["FINAM_API_KEY"]) as client:
+    account_id = os.environ["FINAM_ACCOUNT_ID"]
+
+    state = client.orders.PlaceOrder(Order(
+        account_id=account_id,
+        symbol="SBER@MISX",
+        quantity=Decimal(value="1"),
+        side=Side.SIDE_BUY,
+        type=OrderType.ORDER_TYPE_LIMIT,
+        time_in_force=TimeInForce.TIME_IN_FORCE_DAY,
+        limit_price=Decimal(value="100.00"),  # far below market — won't fill
+        client_order_id="example-001",
+    ))
+    print(f"Placed: {state.order_id} status={state.status}")
+
+    cancelled = client.orders.CancelOrder(
+        CancelOrderRequest(account_id=account_id, order_id=state.order_id)
+    )
+    print(f"Cancelled: {cancelled.order_id} status={cancelled.status}")
+```
+
+### Stream live quotes (async)
+
+```python
+import asyncio, os, sys
+from finam_trade_api import AsyncFinamClient
+from finam_trade_api.market_data import SubscribeQuoteRequest
+
+async def main(symbols: list[str]) -> None:
+    async with AsyncFinamClient(secret=os.environ["FINAM_API_KEY"]) as client:
+        async for tick in client.market_data.SubscribeQuote(
+            SubscribeQuoteRequest(symbols=symbols)
+        ):
+            print(tick, flush=True)
+
+asyncio.run(main(sys.argv[1:] or ["SBER@MISX"]))
+```
+
+### Reconnection loop for long-running bots
+
+Streams disconnect after ~86400 s (server-side limit). Wrap the `async for` in a reconnection loop:
+
+```python
+import asyncio, os, grpc
+from finam_trade_api import AsyncFinamClient
+from finam_trade_api.market_data import SubscribeQuoteRequest
+
+async def stream_with_reconnect(symbols: list[str]) -> None:
+    async with AsyncFinamClient(secret=os.environ["FINAM_API_KEY"]) as client:
+        while True:
+            try:
+                async for tick in client.market_data.SubscribeQuote(
+                    SubscribeQuoteRequest(symbols=symbols)
+                ):
+                    process(tick)
+            except grpc.RpcError:
+                await asyncio.sleep(5)  # brief pause before reconnect
+```

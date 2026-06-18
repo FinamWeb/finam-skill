@@ -36,9 +36,10 @@
     ],
     "websiteURL": "https://github.com/FinamWeb/finam-skill",
     "defaultPrompt": [
-      "Show me the latest quotes for SBER@MISX.",
-      "Scan the most volatile Russian stocks today.",
-      "Write an algo trading script using Finam gRPC."
+      "Проведи глубокий анализ моего портфеля. Покажи структуру, динамику и предложи балансировку.",
+      "Найди все акции на Мосбирже из финансового сектора, которые выросли более чем на 5% за неделю при объеме торгов выше 500 млн рублей.",
+      "Построй свечной график SBER@MISX за последний месяц с индикаторами RSI и MACD",
+      "Проверь стратегию арбитража между фьючерсами Сбер и Сбер-преф за последние 3 месяца"
     ]
   }
 }
