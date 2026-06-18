@@ -15,18 +15,38 @@ To execute Trade API requests, configure two credentials:
 
 You can use this skill without them — to design strategies, explore docs, or write scripts.
 
-**Before sending any request, verify both vars are set:**
+**Before sending any request, run this check via Bash tool:**
 
-!`[ -z "$FINAM_API_KEY" ] && echo "❌ FINAM_API_KEY is not set" || echo "✅ FINAM_API_KEY is set"`
-!`[ -z "$FINAM_ACCOUNT_ID" ] && echo "❌ FINAM_ACCOUNT_ID is not set" || echo "✅ FINAM_ACCOUNT_ID is set"`
+```shell
+[ ${#FINAM_API_KEY} -gt 0 ] && echo "✅ FINAM_API_KEY is set" || echo "❌ FINAM_API_KEY is not set"
+echo "FINAM_ACCOUNT_ID=${FINAM_ACCOUNT_ID:-❌ not set}"
+```
 
-If missing, set them as environment variables:
+If either is missing — stop and ask the user to configure credentials using one of the options below.
+
+If missing, set them in any of these ways:
+
+**Option 1 — export directly:**
 ```shell
 export FINAM_API_KEY="your_token"
 export FINAM_ACCOUNT_ID="your_account_number"
 ```
 
-**Claude Code** — add to `.claude/settings.local.json`:
+**Option 2 — `.env` file** (create it, fill in values, then load):
+```
+FINAM_API_KEY=your_token_here
+FINAM_ACCOUNT_ID=your_account_number_here
+```
+Linux/macOS: `source .env` · Windows PowerShell:
+```powershell
+Get-Content .env | ForEach-Object {
+    if ($_ -match '^([^#][^=]*)=(.*)$') {
+        [System.Environment]::SetEnvironmentVariable($matches[1], $matches[2])
+    }
+}
+```
+
+**Option 3 — Claude Code** (`.claude/settings.local.json`):
 ```json
 { "env": { "FINAM_API_KEY": "...", "FINAM_ACCOUNT_ID": "..." } }
 ```

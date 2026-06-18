@@ -42,7 +42,7 @@ codex plugin add finam@finam-skill-marketplace
 In Cursor, open an Agent chat and run:
 
 ```
-/add-plugin finam@https://github.com/FinamWeb/finam-skill
+/add-plugin https://github.com/FinamWeb/finam-skill
 ```
 
 ## Setup
