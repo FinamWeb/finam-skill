@@ -8,30 +8,37 @@ metadata: '{"openclaw": {"emoji": "📈", "homepage": "https://api.finam.ru/", "
 
 ## Setup
 
-**Prerequisites:** `$FINAM_API_KEY` and `$FINAM_ACCOUNT_ID` must be already set in your environment.
+To execute Trade API requests, configure two credentials:
 
-If not configured by environment, follow these steps:
+- `FINAM_API_KEY` — API token. Get it at [api.finam.ru/docs/tokens](https://api.finam.ru/docs/tokens)
+- `FINAM_ACCOUNT_ID` — your account number from [lk.finam.ru](https://lk.finam.ru/). Digits only, without the `КлФ-` prefix.
 
-1. Register and obtain your API Key from [tokens page](https://tradeapi.finam.ru/docs/tokens)
-2. Obtain your Account ID from your [Finam account dashboard](https://lk.finam.ru/)
-3. Set environment variables:
+You can use this skill without them — to design strategies, explore docs, or write scripts.
 
+**Before sending any request, verify both vars are set:**
+
+!`[ -z "$FINAM_API_KEY" ] && echo "❌ FINAM_API_KEY is not set" || echo "✅ FINAM_API_KEY is set"`
+!`[ -z "$FINAM_ACCOUNT_ID" ] && echo "❌ FINAM_ACCOUNT_ID is not set" || echo "✅ FINAM_ACCOUNT_ID is set"`
+
+If missing, set them as environment variables:
 ```shell
-export FINAM_API_KEY="your_api_key_here"
-export FINAM_ACCOUNT_ID="your_account_id_here"
+export FINAM_API_KEY="your_token"
+export FINAM_ACCOUNT_ID="your_account_number"
 ```
 
-Obtain JWT token before using the API:
-
-```shell
-export FINAM_JWT_TOKEN=$(curl -sL "https://api.finam.ru/v1/sessions" \
---header "Content-Type: application/json" \
---data '{"secret": "'"$FINAM_API_KEY"'"}' | jq -r '.token')
+**Claude Code** — add to `.claude/settings.local.json`:
+```json
+{ "env": { "FINAM_API_KEY": "...", "FINAM_ACCOUNT_ID": "..." } }
 ```
 
-**Note:** Token expires after 15 minutes. Re-run this command if you receive authentication errors.
+Using the API Key, obtain a **JWT token** — it expires after 15 minutes and does not persist between shell calls. Always fetch it inline before each request:
 
-`$FINAM_ACCOUNT_ID` — numeric part only, without the `KlF-` prefix.
+```shell
+TOKEN=$(curl -sL "https://api.finam.ru/v1/sessions" \
+  --header "Content-Type: application/json" \
+  --data '{"secret": "'"$FINAM_API_KEY"'"}' | jq -r '.token') && \
+curl -sL "https://api.finam.ru/v1/..." --header "Authorization: $TOKEN" | jq
+```
 
 **Demo account:** Can be opened at the [tokens page](https://tradeapi.finam.ru/docs/tokens). Valid for 2 weeks; works identically to a real account.
 
