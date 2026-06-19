@@ -34,16 +34,18 @@ def parse_args():
         epilog=(
             "examples:\n"
             "  asset_search.py 'SBER*'\n"
-            "  asset_search.py NG*@RTSX --type FUTURES\n"
-            "  asset_search.py --name 'natural gas' --type FUTURES\n"
+            "  asset_search.py 'NG*' --type FUTURES --mic RTSX\n"
+            "  asset_search.py 'NGF6' --type FUTURES --mic RTSX --archived\n"
+            "  asset_search.py --name 'natural gas' --type FUTURES --mic RTSX --archived\n"
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument("pattern", nargs="?", help="glob pattern matched against ticker and symbol (e.g. SBER*, NG*@RTSX)")
     parser.add_argument("--name", metavar="QUERY", help="case-insensitive substring search on instrument name")
     parser.add_argument("--type", metavar="TYPE", choices=VALID_TYPES, type=str.upper, help=f"filter by type: {', '.join(sorted(VALID_TYPES))}")
-    parser.add_argument("--active", metavar="true|false", default="true", choices=("true", "false"), help="include archived instruments (default: true)")
-    parser.add_argument("--max", metavar="N", type=int, default=30_000, help="max assets to fetch via AllAssets when --active false (default: 30000)")
+    parser.add_argument("--mic", metavar="MIC", type=str.upper, help="filter by exchange MIC code (e.g. RTSX, MISX)")
+    parser.add_argument("--archived", action="store_true", default=False, help="include expired/archived instruments (uses AllAssets endpoint)")
+    parser.add_argument("--max", metavar="N", type=int, default=200_000, help="max assets to fetch when --archived is set (default: 200000)")
     parser.add_argument("--debug", action="store_true", help="verbose output")
 
     args = parser.parse_args()
@@ -54,7 +56,7 @@ def parse_args():
     global _debug
     _debug = args.debug
 
-    return args.pattern, args.name.lower() if args.name else None, args.type, args.active == "true", args.max
+    return args.pattern, args.name.lower() if args.name else None, args.type, args.mic, args.archived, args.max
 
 
 def fetch_assets(client):
@@ -64,11 +66,11 @@ def fetch_assets(client):
     return assets
 
 
-def fetch_assets_all(client, only_active, max_assets):
+def fetch_assets_all(client, only_disabled, max_assets):
     assets = []
     cursor = 0
     while True:
-        resp = client.assets.AllAssets(AllAssetsRequest(cursor=cursor, only_active=only_active))
+        resp = client.assets.AllAssets(AllAssetsRequest(cursor=cursor, only_disabled=only_disabled))
         batch = list(resp.assets)
         assets.extend(batch)
         dprint(f"  Fetched {len(batch)} assets (total: {len(assets)})")
@@ -86,12 +88,12 @@ def fetch_assets_all(client, only_active, max_assets):
 
 
 def main():
-    pattern, name_query, type_filter, only_active, max_assets = parse_args()
+    pattern, name_query, type_filter, mic_filter, include_archived, max_assets = parse_args()
 
     with make_client() as client:
-        if not only_active:
-            dprint(f"Fetching all assets (only_active=false, max={max_assets})...")
-            assets = fetch_assets_all(client, only_active=False, max_assets=max_assets)
+        if include_archived:
+            dprint(f"Fetching archived assets only (max={max_assets})...")
+            assets = fetch_assets_all(client, only_disabled=True, max_assets=max_assets)
         else:
             dprint("Fetching active assets...")
             assets = fetch_assets(client)
@@ -101,6 +103,8 @@ def main():
     matches = []
     for a in assets:
         if type_filter and a.type.upper() != type_filter:
+            continue
+        if mic_filter and a.mic.upper() != mic_filter:
             continue
         ticker_ok = not pattern or fnmatch.fnmatch(a.ticker, pattern) or fnmatch.fnmatch(a.symbol, pattern)
         name_ok = not name_query or name_query in a.name.lower()
@@ -114,6 +118,8 @@ def main():
         parts.append(f"name='{name_query}'")
     if type_filter:
         parts.append(f"type={type_filter}")
+    if mic_filter:
+        parts.append(f"mic={mic_filter}")
     filter_desc = " ".join(parts)
 
     if not matches:

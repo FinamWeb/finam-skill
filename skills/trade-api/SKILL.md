@@ -110,16 +110,19 @@ python3 scripts/asset_search.py 'SBER*'
 # By name (case-insensitive substring)
 python3 scripts/asset_search.py --name 'apple'
 
-# By ticker glob + type filter
-python3 scripts/asset_search.py 'NG*' --type FUTURES
+# By ticker glob + type + exchange filter
+python3 scripts/asset_search.py 'NG*' --type FUTURES --mic RTSX
 
-# Search across all instruments (including archived) via /assets/all
-python3 scripts/asset_search.py 'NG*' --type FUTURES --active false
+# Search expired/archived instruments (e.g. expired futures contracts)
+python3 scripts/asset_search.py 'NGF6' --type FUTURES --mic RTSX --archived
+
+# By name + exchange + archived
+python3 scripts/asset_search.py --name 'NG-' --type FUTURES --mic RTSX --archived
 ```
 
 Available types: `EQUITIES`, `FUTURES`, `BONDS`, `FUNDS`, `SPREADS`, `OTHER`, `CURRENCIES`, `OPTIONS`, `SWAPS`, `INDICES`
 
-`--max=N` switches to `GET /v1/assets/all` with pagination (rate limit: 200 req/min). `--active false` includes archived instruments.
+`--mic MIC` filters by exchange (e.g. `RTSX`, `MISX`). `--archived` fetches expired/delisted instruments via `GET /v1/assets/all?only_disabled=true`. `--max=N` sets the pagination cap (default: 200 000).
 
 ### Get Top N Stocks by Volume
 
