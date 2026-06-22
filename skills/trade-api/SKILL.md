@@ -514,7 +514,7 @@ asyncio.run(main(sys.argv[1:] or ["SBER@MISX"]))
 
 ### Reconnection loop for long-running bots
 
-Streams disconnect after ~86400 s (server-side limit). Wrap the `async for` in a reconnection loop:
+Streams can disconnect for two reasons: the server closes them after ~86400 s, or the JWT token expires mid-stream (`UNAUTHENTICATED`). In both cases the client must be recreated — reusing the same `AsyncFinamClient` instance after `UNAUTHENTICATED` will fail again immediately. Create the client **inside** the loop:
 
 ```python
 import asyncio, os, grpc
@@ -522,13 +522,13 @@ from finam_trade_api import AsyncFinamClient
 from finam_trade_api.market_data import SubscribeQuoteRequest
 
 async def stream_with_reconnect(symbols: list[str]) -> None:
-    async with AsyncFinamClient(secret=os.environ["FINAM_API_KEY"]) as client:
-        while True:
-            try:
+    while True:
+        try:
+            async with AsyncFinamClient(secret=os.environ["FINAM_API_KEY"]) as client:
                 async for tick in client.market_data.SubscribeQuote(
                     SubscribeQuoteRequest(symbols=symbols)
                 ):
                     process(tick)
-            except grpc.RpcError:
-                await asyncio.sleep(5)  # brief pause before reconnect
+        except grpc.RpcError:
+            await asyncio.sleep(5)  # brief pause before reconnect
 ```
