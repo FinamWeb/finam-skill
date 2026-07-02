@@ -94,7 +94,8 @@ A successful response.
     "valid_before": "VALID_BEFORE_UNSPECIFIED",
     "valid_expiry_time": "string",
     "comment": "string"
-  }
+  },
+  "triggered_order_id": "string"
 }
 ```
 

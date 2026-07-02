@@ -144,6 +144,8 @@ Authorization: <token>
 
 ## CorporateActionsService
 
+- [GetFutureBondsEvents](/docs/rest/corporateactionsservice_getfuturebondsevents.md): Получить календарь будущих событий по облигациям
+- [GetPastBondsEvents](/docs/rest/corporateactionsservice_getpastbondsevents.md): Получить календарь исторических событий по облигациям
 - [GetFutureDividends](/docs/rest/corporateactionsservice_getfuturedividends.md): Получить список предстоящих (будущих) дивидендных выплат по инструменту.
 - [GetPastDividends](/docs/rest/corporateactionsservice_getpastdividends.md): Получить исторические данные по выплаченным дивидендам инструмента
 - [GetFutureSplits](/docs/rest/corporateactionsservice_getfuturesplits.md): Получить предстоящие события сплитов по инструменту

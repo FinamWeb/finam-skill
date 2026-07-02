@@ -870,6 +870,7 @@
  that count forward in time. Must be from 0 to 999,999,999
  inclusive. |
 | sltp_order.comment | string | no | Метка заявки. (максимум 128 символов) |
+| triggered_order_id | string | no | Идентификатор биржевой заявки, порожденной в результате срабатывания условия или достижения стоп-цены. |
 
 ## Response: OK
 
@@ -960,7 +961,8 @@
       "nanos": 0
     },
     "comment": "string"
-  }
+  },
+  "triggered_order_id": "string"
 }
 ```
 

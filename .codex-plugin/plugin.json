@@ -1,6 +1,6 @@
 {
   "name": "finam",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Finam Trade API plugin for Codex. Skills: finam:trade-api for real-time quotes, order book, OHLCV candles, portfolio and orders via REST, gRPC, and WebSocket; instrument search and volatility scanning; placing and cancelling orders through Finam broker; developing algorithmic trading scripts.",
   "author": {
     "name": "Alexander",

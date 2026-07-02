@@ -86,7 +86,8 @@ const response = await fetch('https://api.finam.ru/v1/sessions', {
     'Content-Type': 'application/json'
   },
   body: JSON.stringify({
-    "secret": "string"
+    "secret": "string",
+    "source_app_id": "string"
   })
 });
 const data = await response.json();
@@ -103,7 +104,8 @@ response = requests.post(
         "Content-Type": "application/json"
     },
     json={
-    "secret": "string"
+    "secret": "string",
+    "source_app_id": "string"
 }
 )
 data = response.json()
@@ -123,7 +125,8 @@ import (
 
 func main() {
     body := []byte(`{
-  "secret": "string"
+  "secret": "string",
+  "source_app_id": "string"
 }`)
     req, _ := http.NewRequest("POST", "https://api.finam.ru/v1/sessions", bytes.NewBuffer(body))
     req.Header.Set("Content-Type", "application/json")
@@ -143,7 +146,7 @@ $ch = curl_init('https://api.finam.ru/v1/sessions');
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'POST');
 curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode(['secret' => 'string']));
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode(['secret' => 'string', 'source_app_id' => 'string']));
 $response = curl_exec($ch);
 curl_close($ch);
 $data = json_decode($response, true);
@@ -162,7 +165,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let response = client
         .post("https://api.finam.ru/v1/sessions")
         .json(&json!({
-          "secret": "string"
+          "secret": "string",
+          "source_app_id": "string"
         }))
         .send().await?;
 
@@ -178,6 +182,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 curl -X POST 'https://api.finam.ru/v1/sessions' \
   -H 'Content-Type: application/json' \
   -d '{
-  "secret": "string"
+  "secret": "string",
+  "source_app_id": "string"
 }'
 ```

@@ -46,7 +46,8 @@
 ```shell
 grpcurl \
   -d '{
-  "secret": "string"
+  "secret": "string",
+  "source_app_id": "string"
 }' \
   api.finam.ru:443 grpc.tradeapi.v1.auth.AuthService/Auth
 ```

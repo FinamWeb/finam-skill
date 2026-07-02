@@ -74,6 +74,8 @@ In: metadata
 
 - [GetFutureSplits](/docs/grpc/getfuturesplits.md): Получить предстоящие события сплитов по инструменту
 - [GetPastSplits](/docs/grpc/getpastsplits.md): Получить историю сплитов по инструменту
+- [GetFutureBondsEvents](/docs/grpc/getfuturebondsevents.md): Получить календарь будущих событий по облигациям
+- [GetPastBondsEvents](/docs/grpc/getpastbondsevents.md): Получить календарь исторических событий по облигациям
 - [GetFutureDividends](/docs/grpc/getfuturedividends.md): Получить список предстоящих (будущих) дивидендных выплат по инструменту.
 - [GetPastDividends](/docs/grpc/getpastdividends.md): Получить исторические данные по выплаченным дивидендам инструмента
 
