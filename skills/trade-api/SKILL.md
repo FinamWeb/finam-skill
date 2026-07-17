@@ -424,13 +424,13 @@ All scripts support `--help` for usage details (e.g. `python3 scripts/scanner.py
 
 ## API Protocols
 
-### REST — [references/docs/rest.md](references/docs/rest.md)
+### REST
 
 Endpoint: `https://api.finam.ru/v1` (HTTP/2 required — HTTP/1 causes method errors)
 
 Use for one-off requests: historical OHLCV data, account info, positions, balances, trade history, instrument search, placing or cancelling orders where 100–200 ms latency is acceptable.
 
-### gRPC — [references/docs/grpc.md](references/docs/grpc.md)
+### gRPC
 
 Endpoint: `api.finam.ru:443`
 
@@ -438,17 +438,38 @@ Use for low-latency and streaming scenarios: real-time quotes, order book, trade
 
 **Note:** Streams disconnect once per day (~86400s from subscription start) — implement reconnection logic in long-running bots.
 
-### WebSocket / AsyncAPI — [references/docs/async-api.md](references/docs/async-api.md)
+### WebSocket / AsyncAPI
 
 Endpoints: `api.finam.ru/ws` or `api.finam.ru/tradinginfo`
 
 Use when you need a browser-compatible or firewall-friendly alternative to gRPC for real-time data: streaming quotes, order book updates, and trade events over a standard WebSocket connection.
 
+## Fetching API Documentation
+
+**Always fetch live docs** — never rely on local cached copies. Use the `WebFetch` tool to load documentation on demand.
+
+### Algorithm
+
+1. **Fetch the index** for the relevant protocol to discover available docs:
+
+   | Protocol | Index URL |
+   | --- | --- |
+   | REST | `https://api.finam.ru/docs/rest/llms.txt` |
+   | gRPC | `https://api.finam.ru/docs/grpc/llms.txt` |
+   | WebSocket / AsyncAPI | `https://api.finam.ru/docs/async-api/llms.txt` |
+
+2. **Fetch the specific endpoint doc** linked from the index. URL patterns:
+   - REST: `https://api.finam.ru/docs/rest/<servicename_methodname>.md` (e.g. `ordersservice_placeorder.md`)
+   - gRPC: `https://api.finam.ru/docs/grpc/<methodname>.md` (e.g. `placeorder.md`)
+   - AsyncAPI: `https://api.finam.ru/docs/async-api/<topicname>.md`
+
+Fetch only the docs you actually need for the current task.
+
 ## Python SDK
 
 Use the Finam SDK (`pip install finam-sdk`) for any Python scripts that interact with the API — both for one-off queries and streaming/trading bots. It handles JWT issuance and refresh automatically, provides typed exceptions, and exposes the full gRPC surface via a single `FinamClient` / `AsyncFinamClient` entry point.
 
-Full reference: [references/finam-sdk.md](references/finam-sdk.md)
+Full reference: fetch live from `https://raw.githubusercontent.com/FinamWeb/finam-trade-api/main/python/README.md` (source: https://github.com/FinamWeb/finam-trade-api/tree/main/python)
 
 ### Authenticate and fetch account info
 
