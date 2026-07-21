@@ -1,7 +1,7 @@
 {
   "name": "finam",
   "displayName": "Finam Trade API",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Finam Trade API plugin for Cursor. Skills: finam:trade-api for real-time quotes, order book, OHLCV candles, portfolio and orders via REST, gRPC, and WebSocket; instrument search and volatility scanning; placing and cancelling orders through Finam broker; developing algorithmic trading scripts.",
   "author": {
     "name": "Alexander"
